@@ -6,9 +6,9 @@ The GitHub Pages version is prepared for **https://awaisshahist110-lab.github.io
 
 ## GitHub Pages hosting
 
-In this repository, open **Settings → Pages**. Choose **Deploy from a branch**, select **main** and **/docs**, and save. GitHub then publishes the game from this repository. No API keys or paid hosting setup are needed to play.
+Publishing is automatic. `.github/workflows/pages.yml` runs on every push to `main` and publishes the committed `docs/` folder, enabling Pages on the repository itself the first time it runs. Nothing needs configuring by hand, and no API keys or paid hosting are needed to play.
 
-To update the Pages version after changing the game:
+The workflow uploads `docs/` as it is committed rather than rebuilding it, so the published site is exactly what you can see in the repository. After changing the game, rebuild and commit `docs/` yourself:
 
 ```sh
 npm ci
@@ -16,7 +16,9 @@ npm test
 npm run build:pages
 ```
 
-Commit the source changes and the regenerated `docs/` together. The Vite Pages build uses the `/Svengali-s-Theater/` base path so card art, backgrounds, music and scripts load correctly on GitHub.
+Commit the source changes and the regenerated `docs/` together; pushing to `main` publishes them. The Vite Pages build uses the `/Svengali-s-Theater/` base path so card art, backgrounds, music and scripts load correctly on GitHub.
+
+Deployment status is under the repository's **Actions** tab.
 
 GitHub Pages hosts the game interface and all its artwork/audio, but it cannot run a database or server-side code. Multiplayer therefore needs a small API alongside it, which stores rooms and keeps players’ hands private. That API is in this repository and you host it yourself — see below.
 

@@ -7,8 +7,9 @@ The docs/ folder is the ready-to-publish website. Source files are included so y
 To host this prepared build on your GitHub repository:
 1. Extract this ZIP.
 2. Add the contents of the Svengali-s-Theater folder to your repository's main branch, preserving the folders.
-3. In GitHub, open Settings > Pages.
-4. Select Deploy from a branch, then main and /docs, and save.
+3. Push to main. The included workflow (.github/workflows/pages.yml) turns GitHub
+   Pages on by itself and publishes the docs/ folder. Watch it under the
+   repository's Actions tab.
 
 The GitHub Pages build is configured for:
 https://awaisshahist110-lab.github.io/Svengali-s-Theater/

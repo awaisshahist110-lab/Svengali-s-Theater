@@ -1,0 +1,43 @@
+# Publishes the game to GitHub Pages.
+#
+# docs/ is committed and already built, so this workflow uploads it as-is
+# rather than rebuilding. To change the site, run `npm run build:pages`
+# (or `npm run set-api-origin`) and commit the result; this then publishes it.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Let a running deploy finish rather than cancelling it midway.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # enablement turns Pages on for this repository if it is still off,
+      # so the first run of this workflow needs no manual setup.
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+      - id: deployment
+        uses: actions/deploy-pages@v4
