@@ -1,0 +1,25 @@
+Svengali's Theatre source files
+
+This package contains the complete source code, game artwork, music and effects, database schema and migrations, tests, and a prepared GitHub Pages build.
+
+The docs/ folder is the ready-to-publish website. Source files are included so you can edit and rebuild the game.
+
+To host this prepared build on your GitHub repository:
+1. Extract this ZIP.
+2. Add the contents of the Svengali-s-Theater folder to your repository's main branch, preserving the folders.
+3. In GitHub, open Settings > Pages.
+4. Select Deploy from a branch, then main and /docs, and save.
+
+The GitHub Pages build is configured for:
+https://awaisshahist110-lab.github.io/Svengali-s-Theater/
+
+GitHub Pages serves the interface, artwork and audio. Multiplayer uses the existing live API at:
+https://svengalis-theatre.awaisshah-ist110.chatgpt.site/api/game
+The API has been updated to accept the GitHub Pages origin. Its source and database migration are included in this package. Moving that API to a different provider requires a separate server deployment.
+
+To rebuild the GitHub Pages files with Node.js 22.13 or newer:
+  npm ci
+  npm test
+  npm run build:pages
+
+See README.md for the game rules and development details.
