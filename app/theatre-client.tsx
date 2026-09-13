@@ -41,7 +41,10 @@ export default function Theatre() {
   const eventId = useRef<string | null>(null);
   const stateRef = useRef<PublicState | null>(null);
   const requestBusy = useRef(false);
-  stateRef.current = state;
+  // The inspect_theatre_table tool below is registered once and runs long after
+  // render, so it reads the table through this ref. Writing it after commit
+  // keeps it correct when a render is discarded and never applied.
+  useEffect(() => { stateRef.current = state; }, [state]);
   const viewer = state?.players.find(p => p.id === state.viewerId);
   const current = state?.players[state.currentPlayerIndex];
   const myTurn = !!viewer && current?.id === viewer.id;
@@ -56,7 +59,12 @@ export default function Theatre() {
     if (!response.ok) throw new Error(data.error || 'Could not reconnect.');
     accept(data); return data;
   }, [accept]);
+  // Restores the saved seat and sound settings once, after hydration.
+  // localStorage and location are browser-only: reading them during render
+  // would make the server and client produce different HTML, so this stays an
+  // effect and the one-time setState it needs is expected here.
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect */
     const code = new URLSearchParams(location.search).get('room')?.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     setName(saved('svengali:name', ''));
     setMusicVolume(Number(saved('svengali:music-volume', '18')));
@@ -69,6 +77,7 @@ export default function Theatre() {
       const seat = saved('svengali:seat:' + code, '');
       if (seat) { setRoom(code); setToken(seat); void refresh(code, seat).catch(e => { setError(e.message); setRoom(''); setToken(''); }); }
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
     return () => { music.current?.pause(); sword.current?.pause(); };
   }, [refresh]);
   useEffect(() => {

@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated output, not source: docs/ is the built GitHub Pages bundle,
+    // the counterpart to the dist/ and .next/ ignores above.
+    "docs/**",
   ]),
 ]);
 
