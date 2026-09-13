@@ -1,0 +1,29 @@
+{
+  // Deployment config for the standalone multiplayer API Worker.
+  // Deploy with: npm run deploy:api
+  //
+  // Before the first deploy, create the database and paste its id below:
+  //   npx wrangler d1 create svengalis-theatre
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "svengalis-theatre-api",
+  "main": "worker/api.ts",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "svengalis-theatre",
+      // Replace with the id printed by `npx wrangler d1 create svengalis-theatre`.
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "vars": {
+    // Origins allowed to call the API. Comma-separated, no trailing slashes.
+    // Add a custom domain here too if you point one at GitHub Pages.
+    "ALLOWED_ORIGINS": "https://awaisshahist110-lab.github.io"
+  }
+}

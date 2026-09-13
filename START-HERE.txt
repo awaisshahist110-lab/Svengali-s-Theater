@@ -13,9 +13,18 @@ To host this prepared build on your GitHub repository:
 The GitHub Pages build is configured for:
 https://awaisshahist110-lab.github.io/Svengali-s-Theater/
 
-GitHub Pages serves the interface, artwork and audio. Multiplayer uses the existing live API at:
+GitHub Pages serves the interface, artwork and audio. It cannot run a database, so
+multiplayer needs a small API alongside it. That API is a Cloudflare Worker included
+here, and you host it on your own free Cloudflare account:
+
+  npm ci
+  npx wrangler login
+  npm run deploy:api
+  npm run set-api-origin -- <the URL that prints>
+
+Until you run those, multiplayer still calls the original hosted API at
 https://svengalis-theatre.awaisshah-ist110.chatgpt.site/api/game
-The API has been updated to accept the GitHub Pages origin. Its source and database migration are included in this package. Moving that API to a different provider requires a separate server deployment.
+See "Self-hosting the multiplayer API" in README.md.
 
 To rebuild the GitHub Pages files with Node.js 22.13 or newer:
   npm ci

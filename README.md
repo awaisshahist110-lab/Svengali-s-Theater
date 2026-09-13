@@ -18,7 +18,52 @@ npm run build:pages
 
 Commit the source changes and the regenerated `docs/` together. The Vite Pages build uses the `/Svengali-s-Theater/` base path so card art, backgrounds, music and scripts load correctly on GitHub.
 
-GitHub Pages hosts the game interface and all its artwork/audio. Multiplayer requests use `https://svengalis-theatre.awaisshah-ist110.chatgpt.site/api/game`, which stores rooms and keeps players’ hands private. The server explicitly permits requests from this GitHub Pages origin. GitHub Pages itself cannot run a database or server-side code.
+GitHub Pages hosts the game interface and all its artwork/audio, but it cannot run a database or server-side code. Multiplayer therefore needs a small API alongside it, which stores rooms and keeps players’ hands private. That API is in this repository and you host it yourself — see below.
+
+## Self-hosting the multiplayer API
+
+The API is a single Cloudflare Worker (`worker/api.ts`) backed by a D1 database. It needs a free Cloudflare account and no other service. Rooms are the only thing stored; there are no user accounts, and no keys or secrets are involved.
+
+```sh
+npm ci
+npx wrangler login     # once, opens your browser
+npm run deploy:api
+```
+
+`npm run deploy:api` creates the D1 database on first run, writes its id into `wrangler.jsonc`, applies the schema migration, and publishes the Worker. It is safe to re-run — finished steps are skipped. It prints a URL like `https://svengalis-theatre-api.<your-subdomain>.workers.dev`.
+
+Point the game at it, which also rebuilds `docs/`:
+
+```sh
+npm run set-api-origin -- https://svengalis-theatre-api.<your-subdomain>.workers.dev
+git add site.config.json wrangler.jsonc docs
+git commit -m "Point multiplayer at the self-hosted API"
+git push
+```
+
+Multiplayer is now entirely on your own infrastructure. Check it any time by opening the Worker URL directly — it answers `{"service":"svengalis-theatre-api","status":"ok"}`.
+
+### Configuration
+
+| Where | Setting | Purpose |
+| --- | --- | --- |
+| `site.config.json` | `apiOrigin` | The API the published site calls. Change it with `npm run set-api-origin`, not by hand, so `docs/` is rebuilt to match. |
+| `wrangler.jsonc` | `vars.ALLOWED_ORIGINS` | Comma-separated origins the API accepts browser requests from. Defaults to the GitHub Pages origin. Add your custom domain here if you use one, then re-run `npm run deploy:api`. |
+| `wrangler.jsonc` | `d1_databases[0].database_id` | Your database. Filled in automatically on the first deploy; commit the change. |
+
+`ALLOWED_ORIGINS` is a real access control, not a formality: players’ private hands are served across origins, so an origin that is not listed is refused. Setting it to an empty value falls back to the default rather than trusting every origin.
+
+### Day-to-day
+
+```sh
+npm test                # game rules and hosting behaviour
+npm run dev:api         # run the API locally against a local D1
+npm run tail:api        # stream live logs from the deployed Worker
+```
+
+### Cost
+
+Cloudflare’s free tier covers 100,000 Worker requests and 5 million D1 row reads per day. A game polls a few times per second while a match is live, so ordinary play stays inside the free tier and no card is required.
 
 Built from the supplied Bloody Evolution v8 source, with Svengali’s Theatre rules, card illustrations, intro, backdrop and audio. The interface uses layered card stacks, a numbered Stage Defence guard, private hands and explicit attack/cancellation responses.
 
