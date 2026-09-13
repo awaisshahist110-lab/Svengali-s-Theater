@@ -75,7 +75,9 @@ test('multiple surrendered cards may meet the debt exactly', () => {
 test('Black Box is wasted by cancellation without spending Defence', () => {
   const f = fixture(); const target = stack(f.state, f.b, 'angel', 4); guard(f.state, f.b, 20);
   const no = hand(f.state, f.b, c => c.effect === 'no-strings-attached'); const box = special(f, 'black-box', { targetStackId: target.id });
+  assert.equal(f.state.event.kind, 'black-box');
   applyAction(f.state, f.b.id, { type: 'respond', pendingId: f.state.pending.id, cancelCardId: no.id }); allow(f, f.a);
+  assert.equal(f.state.event.kind, 'cancel');
   assert.equal(f.a.stacks.length, 0); assert.equal(f.b.stacks[0].cards.length, 4); assert.equal(defenceValue(f.b), 20);
   assert.ok(f.state.discard.some(c => c.id === box.id)); assert.ok(f.state.discard.some(c => c.id === no.id)); assert.equal(f.state.actionsLeft, 2); conservation(f.state);
 });
@@ -84,6 +86,7 @@ test('cancel a cancellation to resolve Black Box, which bypasses Defence', () =>
   const noB = hand(f.state, f.b, c => c.effect === 'no-strings-attached'); const noA = hand(f.state, f.a, c => c.effect === 'no-strings-attached');
   special(f, 'black-box', { targetStackId: target.id }); const id = f.state.pending.id;
   applyAction(f.state, f.b.id, { type: 'respond', pendingId: id, cancelCardId: noB.id });
+  assert.equal(f.state.event.kind, 'no-strings-attached');
   applyAction(f.state, f.a.id, { type: 'respond', pendingId: id, cancelCardId: noA.id }); allow(f);
   assert.equal(f.a.stacks[0].cards.length, 4); assert.equal(f.b.stacks.length, 0); assert.equal(defenceValue(f.b), 20); conservation(f.state);
 });

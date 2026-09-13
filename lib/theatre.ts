@@ -173,7 +173,7 @@ export function applyAction(state: GameState, actorId: string, action: GameActio
     if (action.cancelCardId) {
       const card = player.hand.find(c => c.id === action.cancelCardId); rule(card?.effect === 'no-strings-attached', 'Choose No Strings Attached from your hand.');
       state.discard.push(takeHand(player, card.id)); pending.cancelled = !pending.cancelled; pending.responderId = actorId === pending.actorId ? pending.targetId : pending.actorId;
-      log(state, player.name + ' plays No Strings Attached.'); signal(state, 'cancel');
+      log(state, player.name + ' plays No Strings Attached.'); signal(state, 'no-strings-attached');
     } else settleEffect(state); return;
   }
   if (action.type === 'surrender') {
@@ -220,7 +220,7 @@ export function applyAction(state: GameState, actorId: string, action: GameActio
     pending.targetStackId = action.targetStackId; pending.targetCardId = action.targetCardId; pending.offerCardId = action.offerCardId;
     log(state, player.name + ' plays ' + card.name + ' against ' + target.name + '.');
   }
-  state.discard.push(takeHand(player, card.id)); state.actionsLeft--; state.pending = pending; signal(state, pending.kind === 'invade' ? 'invade' : 'special');
+  state.discard.push(takeHand(player, card.id)); state.actionsLeft--; state.pending = pending; signal(state, pending.kind);
 }
 export function publicState(state: GameState, token?: string | null): PublicState {
   const viewer = playerFromToken(state, token);

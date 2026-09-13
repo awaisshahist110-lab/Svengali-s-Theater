@@ -36,15 +36,14 @@ export default function Theatre() {
   const [musicBlocked, setMusicBlocked] = useState(false);
   const music = useRef<HTMLAudioElement | null>(null);
   const sword = useRef<HTMLAudioElement | null>(null);
+  const evilLaugh = useRef<HTMLAudioElement | null>(null);
+  const noStrings = useRef<HTMLAudioElement | null>(null);
   const unlocked = useRef(false);
   const version = useRef(0);
   const eventId = useRef<string | null>(null);
   const stateRef = useRef<PublicState | null>(null);
   const requestBusy = useRef(false);
-  // The inspect_theatre_table tool below is registered once and runs long after
-  // render, so it reads the table through this ref. Writing it after commit
-  // keeps it correct when a render is discarded and never applied.
-  useEffect(() => { stateRef.current = state; }, [state]);
+  stateRef.current = state;
   const viewer = state?.players.find(p => p.id === state.viewerId);
   const current = state?.players[state.currentPlayerIndex];
   const myTurn = !!viewer && current?.id === viewer.id;
@@ -59,12 +58,7 @@ export default function Theatre() {
     if (!response.ok) throw new Error(data.error || 'Could not reconnect.');
     accept(data); return data;
   }, [accept]);
-  // Restores the saved seat and sound settings once, after hydration.
-  // localStorage and location are browser-only: reading them during render
-  // would make the server and client produce different HTML, so this stays an
-  // effect and the one-time setState it needs is expected here.
   useEffect(() => {
-    /* eslint-disable react-hooks/set-state-in-effect */
     const code = new URLSearchParams(location.search).get('room')?.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     setName(saved('svengali:name', ''));
     setMusicVolume(Number(saved('svengali:music-volume', '18')));
@@ -72,13 +66,14 @@ export default function Theatre() {
     setMusicOn(saved('svengali:music', 'on') !== 'off'); setEffectsOn(saved('svengali:effects', 'on') !== 'off');
     music.current = new Audio(assetUrl('/audio/creepy-circus.mp3')); music.current.loop = true; music.current.preload = 'none';
     sword.current = new Audio(assetUrl('/audio/sword-slice.mp3')); sword.current.preload = 'auto';
+    evilLaugh.current = new Audio(assetUrl('/audio/evil-laugh.mp3')); evilLaugh.current.preload = 'auto';
+    noStrings.current = new Audio(assetUrl('/audio/no-strings.mp3')); noStrings.current.preload = 'auto';
     if (code) {
       setJoinCode(code); setEntered(true);
       const seat = saved('svengali:seat:' + code, '');
       if (seat) { setRoom(code); setToken(seat); void refresh(code, seat).catch(e => { setError(e.message); setRoom(''); setToken(''); }); }
     }
-    /* eslint-enable react-hooks/set-state-in-effect */
-    return () => { music.current?.pause(); sword.current?.pause(); };
+    return () => { music.current?.pause(); sword.current?.pause(); evilLaugh.current?.pause(); noStrings.current?.pause(); };
   }, [refresh]);
   useEffect(() => {
     if (!room || !token) return;
@@ -112,8 +107,9 @@ export default function Theatre() {
     const event = state?.event;
     if (!event || event.id === eventId.current) return;
     const initial = !eventId.current; eventId.current = event.id;
-    if (!initial && event.kind === 'invade' && effectsOn && sword.current) {
-      sword.current.volume = effectVolume / 100; sword.current.currentTime = 0; void sword.current.play().catch(() => {});
+    if (!initial && effectsOn) {
+      const effect = event.kind === 'invade' ? sword.current : event.kind === 'black-box' ? evilLaugh.current : event.kind === 'no-strings-attached' ? noStrings.current : null;
+      if (effect) { effect.volume = effectVolume / 100; effect.currentTime = 0; void effect.play().catch(() => {}); }
     }
   }, [state?.event, effectsOn, effectVolume]);
   useEffect(() => {
@@ -286,7 +282,7 @@ function ResponseModal({ state, viewer, busy, error, onAct }: { state: PublicSta
   return <Modal title={title} error={error}><p className="eyebrow">{pending.stage === 'surrender' ? 'Your Defence has been spent' : pending.cancelled ? 'No Strings Attached' : other.name + ' is pulling the strings'}</p><h2>{pending.cancelled ? 'Your action was cancelled.' : title}</h2>
     {pending.stage === 'response' && <div className="action-preview"><div>{previewCards.map(c => <img key={c.id} src={assetUrl(c.image)} alt={c.name} />)}</div><p>{detail}</p></div>}
     {pending.stage === 'surrender' ? <><div className="combat-math"><span>Attack<b>{pending.attack}</b></span><span>Defence spent<b>−{pending.defenceSpent}</b></span><span>Still owed<b>{pending.remaining}</b></span></div><p>Choose puppets worth at least <strong>{pending.remaining} ATK</strong>. You choose what leaves your Stage. Overpayment receives no change.</p><div className="choice-stacks">{cards.map(c => <ChoiceCard key={c.id} card={c} selected={chosen.includes(c.id)} onClick={() => setChosen(chosen.includes(c.id) ? chosen.filter(id => id !== c.id) : [...chosen, c.id])} />)}</div><p className="selection-total">Selected: {amount} ATK</p>{cards.reduce((n, c) => n + PUPPETS[c.puppet!].atk, 0) < pending.remaining && <p>You have less than the amount owed. Surrender every puppet to settle the invasion.</p>}<button className="primary" disabled={busy || !(amount >= pending.remaining || chosen.length === cards.length)} onClick={() => void onAct({ type: 'surrender', pendingId: pending.id, cardIds: chosen })}>Surrender selected puppets</button></> :
-      <><p>{pending.cancelled ? 'Accept the cancellation, or play No Strings Attached to reverse it.' : pending.kind === 'invade' ? 'Your deployed Defence will absorb ' + Math.min(defenceValue(viewer), pending.attack) + ' attack. Any remainder is paid in puppets.' : 'You can let this action happen or cancel it with No Strings Attached.'}</p>{cancel && <button className="cancel-action" disabled={busy} onClick={() => void onAct({ type: 'respond', pendingId: pending.id, cancelCardId: cancel.id })}><img src={assetUrl(cancel.image)} alt="" /><span>Play No Strings Attached<small>{pending.cancelled ? 'Reverse the cancellation' : 'Cancel this action'}</small></span></button>}<button className="primary" disabled={busy} onClick={() => void onAct({ type: 'respond', pendingId: pending.id })}>{pending.cancelled ? 'Accept cancellation' : pending.kind === 'invade' ? 'Resolve invasion' : 'Let it happen'}</button></>}
+      <><p>{pending.cancelled ? (cancel ? 'You have No Strings Attached. You can reverse this cancellation.' : 'You cannot reverse this cancellation. Accept it to continue.') : cancel ? 'You have No Strings Attached. You can cancel this action before it resolves.' : pending.kind === 'invade' ? 'You have no No Strings Attached. Resolve the invasion; your deployed Defence will absorb ' + Math.min(defenceValue(viewer), pending.attack) + ' ATK, then you must surrender puppets if any attack remains.' : pending.kind === 'black-box' ? 'You have no No Strings Attached. You cannot cancel Black Box; let it take the chosen set.' : 'You have no No Strings Attached. You cannot cancel this action; let it resolve.'}</p>{cancel && <button className="cancel-action" disabled={busy} onClick={() => void onAct({ type: 'respond', pendingId: pending.id, cancelCardId: cancel.id })}><img src={assetUrl(cancel.image)} alt="" /><span>Play No Strings Attached<small>{pending.cancelled ? 'Reverse the cancellation' : 'Cancel this action'}</small></span></button>}<button className="primary" disabled={busy} onClick={() => void onAct({ type: 'respond', pendingId: pending.id })}>{pending.cancelled ? 'Accept cancellation' : pending.kind === 'invade' ? (cancel ? 'Do not cancel · resolve invasion' : 'Resolve invasion') : (cancel ? 'Do not cancel · let it happen' : 'Let it happen')}</button></>}
   </Modal>;
 }
 function DiscardModal({ hand, busy, error, onClose, onSubmit }: { hand: Card[]; busy: boolean; error: string; onClose: () => void; onSubmit: (ids: string[]) => void }) {
